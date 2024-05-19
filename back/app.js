@@ -95,6 +95,14 @@ app.get('/jobs/refresh', async (req, res) => {
   })
 });
 
+app.get('/config/get', async (req, res) => {
+  return getConfig()
+  .then(result => res.json(result))
+  .catch(error => {
+    res.status(500).json({ error: error });
+  })
+});
+
 async function updateConfig(id, externalId) {
   const query = 'UPDATE config SET extId = ? WHERE id = ?';
   try {
