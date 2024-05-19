@@ -1,0 +1,62 @@
+# .github/workflows/vercel.yml
+name: Vercel Deployment
+
+on:
+  push:
+    branches:
+      - never
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+  
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./back
+
+      - name: Create configuration file
+        run: |
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }} 
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          CRON_JOB_TOKEN=${{ secrets.CRON_JOB_TOKEN }}
+          CRON_JOB_URL=${{ secrets.CRON_JOB_URL }}
+          NOY_URL=${{ secrets.NOY_URL }}
+          PORT=${{ secrets.PORT }}" > .env.local
+        working-directory: ./back
+
+      - name: Show where i am
+        run: |
+          cd back
+          ls -la
+
+      - name: Create vercel.json
+        run: |
+          echo '{
+            "version": 2,
+            "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+            "builds": [{ "src": "index.js", "use": "@vercel/node" }]
+          }' > vercel.json
+        working-directory: ./back
+          
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+        working-directory: ./back
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./back
+
+      - name: Deploy to Vercel
+        run: vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+
