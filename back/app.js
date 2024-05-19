@@ -1,6 +1,5 @@
 const express = require('express');
 const axios = require('axios');
-const cron = require('node-cron');
 const db = require('./core/db_connection')
 
 const app = express();
