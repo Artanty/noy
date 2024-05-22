@@ -2,6 +2,7 @@ const router = require("express").Router()
 const ConfigController = require('./../controllers/configController') 
 const ExternalController = require('./../controllers/externalController')
 const MainController = require('./../controllers/mainController')
+const InitController = require('./../controllers/initController')
 
 router.get('/config/get', ConfigController.getConfigApi)
 router.post('/config/add', ConfigController.addConfigApi)
@@ -13,5 +14,7 @@ router.post('/jobs/add', ExternalController.createExtJobApi)
 
 router.get('/jobs/refresh', MainController.refreshJobs)
 router.get('/make-request', MainController.makeRequest)
+
+router.get('/get-updates', InitController.getUpdatesApi)
 
 module.exports = router;

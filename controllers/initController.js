@@ -28,7 +28,7 @@ class InitController {
       await createTable(tableName)
       .then(result => {
         // console.log(`table ${tableName} created`)
-        console.log(result)
+        // console.log(result)
       })
     } catch (error) {
       console.error(error.message)
@@ -62,6 +62,11 @@ class InitController {
       console.error(error.message)
     }
   }
+
+  async getUpdatesApi (req, res) {
+    res.json({ NOY__STATUS: 'working' })
+  }
+  
 }
 
 const instance = new InitController()

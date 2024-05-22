@@ -7,7 +7,7 @@ app.use("/", routes);
 
 const InitController = require('./controllers/initController')
 
-InitController.createTable('history')
+// InitController.createTable('config')
 InitController.checkTable()
 
 const PORT = process.env.PORT || 3000;
