@@ -83,7 +83,7 @@ class MainController {
       console.log(`Url ${url} response: ${JSON.stringify(response.data)}`)
       const saveHistoryData = { 
         url, 
-        request_time: new Date(requestTime).toISOString().slice(0, -14), 
+        request_time: new Date(requestTime).toISOString(), 
         response_time: new Date() - requestTime, 
         response_data: stringifyResponse(response.data), 
         response_code: response.status
