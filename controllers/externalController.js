@@ -2,6 +2,7 @@ const getExtJobs = require('./../externalActions/getExtJobs')
 const deleteExtJob = require('./../externalActions/deleteExtJob')
 const createExtJob = require('./../externalActions/createExtJob')
 const countInterval = require('./../utils/countInterval')
+const appendUrlQueryDelimiter = require('./../utils/appendUrlQueryDelimiter')
 
 class ExternalController {
 
@@ -56,6 +57,7 @@ class ExternalController {
    * @param {string} config.url
    * @param {string} config.title
    * @param {number} config.request_interval
+   * @param {number} config.app
    * @returns number
    */
   async createExtJob (config) {
@@ -64,9 +66,12 @@ class ExternalController {
       ? countInterval(config.request_interval)
       : [-1]
     
-    const targetUrl = config.executor === 'self' 
+    let targetUrl = config.executor === 'self' 
       ? `${process.env.NOY_URL}/make-request?target=${config.url}` 
       : config.url
+
+    targetUrl = appendUrlQueryDelimiter(targetUrl) + `app=${config.app || 'NONE'}`
+
     const data = {
       job: {
           title: config.title,
@@ -96,19 +101,12 @@ class ExternalController {
     }
   }
 
-  // async createExtJobs (configItems) {
-  //   const promises = configItems.map(this.createExtJob);
-  //   return await Promise.all(promises)    
-  //     .catch(error => {
-  //       console.error('Error creating one or more jobs:', error);
-  //     });
-  // }
-
   async createExtJobApi (req, res) {
     const defaultData = {
-      request_interval: 10,
+      request_interval: 5,
       url: 'https://plan-m3hd.onrender.com/get-updates',
-      title: 'plan'
+      title: 'annoy plan',
+      app: 'PLAN'
     }
     const createJobData = req.body?.url
       ? req.body
@@ -120,7 +118,6 @@ class ExternalController {
       res.status(500).json({ error: error });
     })
   };
-  
 }
 
 const instance = new ExternalController()

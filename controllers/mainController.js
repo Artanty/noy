@@ -13,7 +13,7 @@ class MainController {
   async createExtJobAndUpdateConfig (configItem) {
     try {
       return await ExternalController.createExtJob(configItem)
-      .then(extJob => ConfigController.updateConfig(configItem.id, extJob.data?.jobId))
+      .then(extJobId => ConfigController.updateConfig(configItem.id, extJobId))
     } catch (error) {
       console.error(`Error while creating ${configItem.name}`, error);
       throw error;
@@ -50,13 +50,14 @@ class MainController {
 
   /**
    * 
-   * @param { https://noy-six.vercel.app/make-request?target=https://plan-m3hd.onrender.com/get-updates } req 
+   * @param { https://noy-six.vercel.app/make-request?target=https://plan-m3hd.onrender.com/get-updates&app=PLAN } req 
    * @param {{ request: 'completed' }} res 
    */
   async makeRequest (req, res) {
     console.log('makeRequest triggered')
     try {
       const url = req.query.target;
+      const app = req.query.app;
       const method = 'get'
       const body = null
       // Record the request time
@@ -80,8 +81,11 @@ class MainController {
         default:
           throw new Error('Unsupported HTTP method')
       }
+
       console.log(`Url ${url} response: ${JSON.stringify(response.data)}`)
+      
       const saveHistoryData = { 
+        app,
         url, 
         request_time: new Date(requestTime).toISOString(), 
         response_time: new Date() - requestTime, 

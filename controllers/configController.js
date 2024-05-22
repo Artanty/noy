@@ -10,6 +10,7 @@ class ConfigController {
     try {
       await removeConfigs()
       .then(result => res.json(result))
+      console.log('Configs deleted')
     } catch (error) {
       console.error(error.message)
       res.status(404).send(error.message);
@@ -35,10 +36,10 @@ class ConfigController {
   }
 
   async addConfigApi (req, res) {
-    const { title, requestInterval, url, executor } = req.body;
+    const { app, title, requestInterval, url, executor } = req.body;
     try {
       const configData = {
-        title, requestInterval, url, executor
+        app, title, requestInterval, url, executor
       }
       return await addConfig(configData)
       .then(result => {

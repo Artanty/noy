@@ -4,7 +4,7 @@ class HistoryController {
 
   /**
    * 
-   * @param {url, request_time, response_time, response_data, response_code} data 
+   * @param {app, url, request_time, response_time, response_data, response_code} data 
    * @returns 
    */
   async addHistory (data) {

@@ -2,6 +2,7 @@ const TABLES_CONFIG = {
   history: `CREATE TABLE history (
     id SERIAL PRIMARY KEY, 
     url VARCHAR(255), 
+    app VARCHAR(255), 
     request_time TIMESTAMP, 
     response_time INTEGER, 
     response_data TEXT, 
@@ -13,6 +14,7 @@ const TABLES_CONFIG = {
     url TEXT, 
     extId TEXT, 
     title TEXT, 
+    app VARCHAR(255),
     executor TEXT);`
 }
 
