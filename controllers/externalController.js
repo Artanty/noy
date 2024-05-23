@@ -63,6 +63,9 @@ class ExternalController {
    * @returns number
    */
   async createExtJob ([config]) { // todo validate
+    if(Array.isArray(config)) {
+      [config] = config
+    }
     const minutes = config.request_interval
       ? countInterval(config.request_interval)
       : [-1]
