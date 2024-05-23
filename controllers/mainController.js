@@ -35,17 +35,20 @@ class MainController {
       return await ExternalController.createExtJob(configItem)
       .then(configWithExtJobId => ConfigController.updateConfig(configWithExtJobId.id, configWithExtJobId.jobId))
     } catch (error) {
-      console.error(`Error while creating ${configItem.name}`, error);
+      console.error(`Error while creating ${configItem.title}`, error);
       throw error;
     }
   }
 
   async createExtJobsAndUpdateConfigs (configItems) {
-    const promises = configItems.map(this.createExtJobAndUpdateConfig);
-    return await Promise.all(promises)    
-      .catch(error => {
-        console.error('Error creating one or more jobs:', error);
-      });
+    for (let i = 0; i < configItems.length; i++) {
+      try {
+        await this.createExtJobAndUpdateConfig(configItems[i]);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`ERROR createExtJobs`, error);
+      }
+    }
   }
   
   async refreshJobs (req, res) {  

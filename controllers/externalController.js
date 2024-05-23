@@ -62,7 +62,7 @@ class ExternalController {
    * @param {number} config.app
    * @returns number
    */
-  async createExtJob ([config]) { // todo validate
+  async createExtJob (config) { // todo validate
     if(Array.isArray(config)) {
       [config] = config
     }
@@ -74,8 +74,10 @@ class ExternalController {
       ? `${process.env.NOY_URL}/make-request?target=${config.url}` 
       : config.url
 
-    console.log('targetUrl: ' + targetUrl)
+    
     targetUrl = appendUrlQueryDelimiter(targetUrl) + `app=${config.app || 'NONE'}`
+    
+    console.log('targetUrl: ' + targetUrl)
 
     const data = {
       job: {
