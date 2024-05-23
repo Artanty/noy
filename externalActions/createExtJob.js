@@ -1,5 +1,6 @@
 require('dotenv').config();
 const axios = require('axios');
+const { readAxiosError, filterAxiosError} = require('./../utils/readAxiosError')
 
 async function createExtJob(data) {
   console.log(JSON.stringify(data))
@@ -9,8 +10,8 @@ async function createExtJob(data) {
   try {
     return await axios.put(`https://api.cron-job.org/jobs`, data, { headers });
   } catch (error) {
-    console.error(`Error creating job with url ${data.url}:`, error);
-    throw error;
+    filterAxiosError(error, `Error  with url ${data.url}`);
+    // throw error;
   }
 }
 

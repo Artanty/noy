@@ -4,16 +4,36 @@ const ConfigController = require('./configController')
 const InitController = require('./initController')
 const HistoryController = require('./historyController')
 const stringifyResponse = require('./../utils/stringifyResponse')
+const { readAxiosError, filterAxiosError} = require('./../utils/readAxiosError')
 
 class MainController {
   constructor() {
     this.refreshJobs = this.refreshJobs.bind(this);
   }
   
+  async createExtJobAndUpdateConfigApi (req, res) {
+    // console.log()
+    try {
+      const configId = req.params.id
+      return await ConfigController.getConfig(configId)
+      .then((configItem) => ExternalController.createExtJob(configItem))
+      .then(configWithExtJobId => ConfigController.updateConfig(configWithExtJobId.id, configWithExtJobId.jobId))
+      .then(result => {
+        console.log(result)
+        res.json(result)
+      })
+    } catch (error) {
+      readAxiosError(error)
+      
+      res.status(500).json({ error: error.response.statusText });
+      throw error;
+    }
+  }
+
   async createExtJobAndUpdateConfig (configItem) {
     try {
       return await ExternalController.createExtJob(configItem)
-      .then(extJobId => ConfigController.updateConfig(configItem.id, extJobId))
+      .then(configWithExtJobId => ConfigController.updateConfig(configWithExtJobId.id, configWithExtJobId.jobId))
     } catch (error) {
       console.error(`Error while creating ${configItem.name}`, error);
       throw error;
@@ -33,7 +53,7 @@ class MainController {
       return InitController.checkTable('config')
         .then(() => ExternalController.getExtJobs())
         .then(ids => ExternalController.deleteExtJobs(ids))
-        .then(() => ConfigController.getConfig())
+        .then(() => ConfigController.getConfigs())
         .then((configs) => {
           return this.createExtJobsAndUpdateConfigs(configs)
         })

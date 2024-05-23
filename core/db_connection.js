@@ -22,7 +22,7 @@ const db = {
       return data
     } catch (error) {
       if (error.response?.data) {
-        throw new Error('BAG_ERR: ' + error.response.data)
+        // throw new Error('BAG_ERR: ' + error.response.data)
       }
       if (error.code === 'ECONNREFUSED') {
         throw new Error('BAG_ERR: Connection error. Service might be inactive.')

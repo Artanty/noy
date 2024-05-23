@@ -3,6 +3,7 @@ const deleteExtJob = require('./../externalActions/deleteExtJob')
 const createExtJob = require('./../externalActions/createExtJob')
 const countInterval = require('./../utils/countInterval')
 const appendUrlQueryDelimiter = require('./../utils/appendUrlQueryDelimiter')
+const { readAxiosError, filterAxiosError} = require('./../utils/readAxiosError')
 
 class ExternalController {
 
@@ -54,14 +55,14 @@ class ExternalController {
   }
 
   /**
+   * @param {string} config.id
    * @param {string} config.url
    * @param {string} config.title
    * @param {number} config.request_interval
    * @param {number} config.app
    * @returns number
    */
-  async createExtJob (config) {
-    
+  async createExtJob ([config]) { // todo validate
     const minutes = config.request_interval
       ? countInterval(config.request_interval)
       : [-1]
@@ -70,6 +71,7 @@ class ExternalController {
       ? `${process.env.NOY_URL}/make-request?target=${config.url}` 
       : config.url
 
+    console.log('targetUrl: ' + targetUrl)
     targetUrl = appendUrlQueryDelimiter(targetUrl) + `app=${config.app || 'NONE'}`
 
     const data = {
@@ -92,12 +94,14 @@ class ExternalController {
     
     try {
       return await createExtJob(data).then(response => {
-        const externalId = response.data.jobId;
-        return externalId;
+        if (!response.data.jobId) {throw new Error('wrong response. no jobId')}
+     
+        return {...config, ...response.data }
       })
     } catch (error) {
-      console.error(`Error creating job `, error);
-      throw error;
+      // readAxiosError(error, `Error creating job`);
+      console.log(error)
+      // throw error;
     }
   }
 
@@ -113,7 +117,7 @@ class ExternalController {
       : defaultData
 
     return this.createExtJob(createJobData)
-    .then(result => res.json(result))
+    .then(result => res.json({...config, ...result })) // config + {"jobId": 5101534}
     .catch(error => {
       res.status(500).json({ error: error });
     })

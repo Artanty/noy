@@ -1,4 +1,5 @@
-const getConfig = require('./../dbActions/getConfig')
+const getConfigs = require('../dbActions/getConfigs')
+const getConfig = require('../dbActions/getConfig')
 const addConfig = require('./../dbActions/addConfig')
 const updateConfig = require('./../dbActions/updateConfig')
 const removeConfigs = require('./../dbActions/removeConfigs')
@@ -17,9 +18,9 @@ class ConfigController {
     }
   }
 
-  async getConfigApi (req, res) {
+  async getConfigsApi (req, res) {
     try {
-      await getConfig()
+      await getConfigs()
       .then(result => res.json(result))
     } catch (error) {
       console.error(error.message)
@@ -27,9 +28,9 @@ class ConfigController {
     }
   }
 
-  async getConfig () {
+  async getConfigs () {
     try {
-      return await getConfig()
+      return await getConfigs()
     } catch (error) {
       console.error(error.message)
     }
@@ -53,12 +54,20 @@ class ConfigController {
   }
 
   async updateConfig (id, externalId) {
-    console.log('updateConfig id: ' + id)
     console.log('updateConfig externalId: ' + externalId)
     try {
       return await updateConfig(id, externalId)
     } catch (error) {
       console.error('Error updating config:', error);
+      res.status(404).send(error.message);
+    }
+  }
+
+  async getConfig (id) {
+    try {
+      return await getConfig(id)
+    } catch (error) {
+      console.error('Error retrieving config:', error);
       res.status(404).send(error.message);
     }
   }
