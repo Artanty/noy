@@ -119,6 +119,15 @@ class MainController {
   
       res.json({ request: 'completed' });
     } catch (error) {
+      const saveHistoryData = { 
+        app,
+        url, 
+        request_time: new Date(requestTime).toISOString(), 
+        response_time: new Date() - requestTime, 
+        response_data: stringifyResponse(error), 
+        response_code: 'error'
+      }
+      await HistoryController.addHistory(saveHistoryData)
       console.error('An error occurred while making the request:', error);
       res.status(500).json({ error: 'An error occurred while making the request. ' + error });
     }
