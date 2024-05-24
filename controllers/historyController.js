@@ -1,4 +1,5 @@
 const addHistory = require('./../dbActions/addHistory')
+const {filterAxiosError} = require('./../utils/readAxiosError')
 
 class HistoryController {
 
@@ -9,10 +10,14 @@ class HistoryController {
    */
   async addHistory (data) {
     try {
-      return await addHistory(data).then(()=>console.log('history saved'))
+      return await addHistory(data).then((res)=>{
+        console.log('add history res: ')
+        console.log(res)
+      })
     } catch (error) {
+      console.log('add history error: ')
       console.error(error)
-      console.error(error.message)
+      filterAxiosError(error)
     }
   }
 }
