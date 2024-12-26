@@ -35,6 +35,9 @@ class InitController {
     }
   }
 
+  /**
+   * Делает проверку, есть ли подключение к БД и необходимые таблицы
+   */
   async checkTable(tableName = Object.keys(TABLES_CONFIG)) {
     let count
     if (!tableName || (Array.isArray(tableName) && !tableName.length)) {
@@ -51,8 +54,8 @@ class InitController {
         if (result.length !== count) {
           throw new Error(`Tables that don't exist: ${tableName
             .filter(initialTable => !result
-            .map(existingTable => existingTable.table_name.replace(`${process.env.APP_NAME}__`, ''))
-            .includes(initialTable))
+              .map(existingTable => existingTable.table_name.replace(`${process.env.APP_NAME}__`, ''))
+              .includes(initialTable))
             .join(", ")}\nCreate them to continue.`)
         }
         console.log(`BAG service connected. Required tables exist: ${tableName.join(", ")}`)
