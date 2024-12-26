@@ -8,9 +8,9 @@ async function createExtJob(data) {
     Authorization: `Bearer ${process.env.CRON_JOB_TOKEN}`
   };
   try {
-    return await axios.put(`https://api.cron-job.org/jobs`, data, { headers });
+    return await axios.put(`${process.env.CRON_JOB_URL}`, data, { headers });
   } catch (error) {
-    filterAxiosError(error, `Error  with url ${data.url}`);
+    filterAxiosError(error, `Error with url ${data.url}`);
     // throw error;
   }
 }

@@ -3,7 +3,7 @@ const axios = require('axios');
 
 async function deleteExtJob(id) {
   try {
-    return await axios.delete(`https://api.cron-job.org/jobs/${id}`, {
+    return await axios.delete(`${process.env.CRON_JOB_URL}/${id}`, {
       headers: {
         Authorization: `Bearer ${process.env.CRON_JOB_TOKEN}`
       }

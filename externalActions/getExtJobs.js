@@ -3,7 +3,7 @@ const axios = require('axios');
 
 async function getExtJobs() {
   try {
-    return await axios.get('https://api.cron-job.org/jobs', {
+    return await axios.get(process.env.CRON_JOB_URL, {
       headers: {
         Authorization: `Bearer ${process.env.CRON_JOB_TOKEN}`
       }
