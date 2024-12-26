@@ -13,7 +13,7 @@ const db = {
     }
 
     const body = {
-      app_name: process.env.PROJECT_ID,
+      app_name: process.env.PROJECT_ID.toUpperCase(),
       query: formattedQuery
     };
 
