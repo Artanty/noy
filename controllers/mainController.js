@@ -51,10 +51,21 @@ class MainController {
     }
   }
   
+  /**
+   * собираем джобы из внешнего сервиса
+   * удаляем джобы из внешнего сервиса
+   * берем конфиги из внутренней бд
+   * пробегаемся по конфигам: 
+   *  - создаем во внешнем сервисе,
+   *  - получаем внешний id
+   *  - сохраняем внешний id в соотв конфиге.
+   * 
+   * Применять когда изменения в конфиг были внесены напрямую в бд и нужно все сбросить и начатьзаново.
+   */
   async refreshJobs (req, res) {  
     try {
       return InitController.checkTable('config')
-        .then(() => ExternalController.getExtJobs())
+        .then(() => ExternalController.getExtJobs()) 
         .then(ids => ExternalController.deleteExtJobs(ids))
         .then(() => ConfigController.getConfigs())
         .then((configs) => {
@@ -106,17 +117,19 @@ class MainController {
       }
 
       console.log(`Url ${url} response: ${JSON.stringify(response.data)}`)
-      
-      const saveHistoryData = { 
-        app,
-        url, 
-        request_time: new Date(requestTime).toISOString(), 
-        response_time: new Date() - requestTime, 
-        response_data: stringifyResponse(response.data), 
-        response_code: response.status
+      if (process.env.SAVE_HISTORY) {
+        console.warn('SAVE_HISTORY is on')
+        const saveHistoryData = { 
+          app,
+          url, 
+          request_time: new Date(requestTime).toISOString(), 
+          response_time: new Date() - requestTime, 
+          response_data: stringifyResponse(response.data), 
+          response_code: response.status
+        }
+        await HistoryController.addHistory(saveHistoryData)  
       }
-      await HistoryController.addHistory(saveHistoryData)
-  
+      
       res.json({ request: 'completed' });
     } catch (error) {
       const saveHistoryData = { 
@@ -127,7 +140,10 @@ class MainController {
         response_data: stringifyResponse(error), 
         response_code: 'error'
       }
-      await HistoryController.addHistory(saveHistoryData)
+      if (process.env.SAVE_HISTORY) {
+        console.warn('SAVE_HISTORY is on')
+        await HistoryController.addHistory(saveHistoryData)
+      }
       console.error('An error occurred while making the request:', error);
       res.status(500).json({ error: 'An error occurred while making the request. ' + error });
     }

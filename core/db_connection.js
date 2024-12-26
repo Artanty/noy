@@ -13,7 +13,7 @@ const db = {
     }
 
     const body = {
-      app_name: process.env.APP_NAME,
+      app_name: process.env.PROJECT_ID,
       query: formattedQuery
     };
 

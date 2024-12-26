@@ -42,8 +42,15 @@ class ExternalController {
 
   async deleteExtJobs(ids) {
     try {
-      if (!Array.isArray(ids)) { console.error('jobs ids is not array'); throw new Error('jobs ids is not array') }
-      if (!ids.length) { return { result: 'no ids to delete' } }
+      if (!Array.isArray(ids)) { 
+        console.error('jobs ids is not array'); 
+        throw new Error('jobs ids is not array') 
+      }
+      if (!ids.length) { 
+        return { 
+          result: 'no ids to delete' 
+        } 
+      }
       const promises = ids.map(deleteExtJob);
   
       await Promise.all(promises);
@@ -55,6 +62,15 @@ class ExternalController {
   }
 
   /**
+   * вызывается через апи:
+   * post('/jobs/add')
+   * get('/jobs/refresh-one/:id')
+   * get('/jobs/refresh')
+   * Запрос всегда изначально выполняется внешним сервисом,
+   * если executor = 'self', то он проксируется обратно через noy
+   * и уже из него уходит куда нужно.
+   * todo понять, нужен ли config.app ?
+   * 
    * @param {string} config.id
    * @param {string} config.url
    * @param {string} config.title

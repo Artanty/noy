@@ -54,7 +54,7 @@ class InitController {
         if (result.length !== count) {
           throw new Error(`Tables that don't exist: ${tableName
             .filter(initialTable => !result
-              .map(existingTable => existingTable.table_name.replace(`${process.env.APP_NAME}__`, ''))
+              .map(existingTable => existingTable.table_name.replace(`${process.env.PROJECT_ID}__`, ''))
               .includes(initialTable))
             .join(", ")}\nCreate them to continue.`)
         }
