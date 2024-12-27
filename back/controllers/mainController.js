@@ -5,6 +5,7 @@ const InitController = require('./initController')
 const HistoryController = require('./historyController')
 const stringifyResponse = require('./../utils/stringifyResponse')
 const { readAxiosError, filterAxiosError} = require('./../utils/readAxiosError')
+const addStatEvent = require('./../externalActions/addStatEvent')
 
 class MainController {
   constructor() {
@@ -60,7 +61,7 @@ class MainController {
    *  - получаем внешний id
    *  - сохраняем внешний id в соотв конфиге.
    * 
-   * Применять когда изменения в конфиг были внесены напрямую в бд и нужно все сбросить и начатьзаново.
+   * Применять когда изменения в конфиг были внесены напрямую в бд и нужно все сбросить и начать заново.
    */
   async refreshJobs (req, res) {  
     try {
@@ -88,16 +89,13 @@ class MainController {
    * @param {{ request: 'completed' }} res 
    */
   async makeRequest (req, res) {
-    console.log('makeRequest triggered')
+    const url = req.query.target;
+    const app = req.query.app;
+    const method = 'get'
+    const body = null
+    // Record the request time
+    const requestTime = new Date();
     try {
-      const url = req.query.target;
-      const app = req.query.app;
-      const method = 'get'
-      const body = null
-      // Record the request time
-      const requestTime = new Date();
-  
-      // Make the HTTP request using axios
       let response;
       switch (method.toLowerCase()) {
         case 'get':
@@ -116,7 +114,13 @@ class MainController {
           throw new Error('Unsupported HTTP method')
       }
 
-      console.log(`Url ${url} response: ${JSON.stringify(response.data)}`)
+      if (response.data) {
+        console.log(`Url (req.query.target) for noy@s makeRequest: `)
+        console.log(`${url}`)
+        console.log(`noy@s makeRequest response: `)
+        console.log(`${JSON.stringify(response.data)}`)
+      }
+
       if (process.env.SAVE_HISTORY) {
         console.warn('SAVE_HISTORY is on')
         const saveHistoryData = { 
@@ -124,14 +128,22 @@ class MainController {
           url, 
           request_time: new Date(requestTime).toISOString(), 
           response_time: new Date() - requestTime, 
-          response_data: stringifyResponse(response.data), 
-          response_code: response.status
+          response_data: response.data ? stringifyResponse(response.data) : 'no parsable data', 
+          response_code: response.status ? response.status : 'no parsable status'
         }
         await HistoryController.addHistory(saveHistoryData)  
       }
+
+      // const stat = req.query.stat
+      // if (stat === 'true') {
+         await addStatEvent(app)
+      // }
       
       res.json({ request: 'completed' });
     } catch (error) {
+      // console.log('error start')
+      // console.log(error)
+      // console.log('error end')
       const saveHistoryData = { 
         app,
         url, 

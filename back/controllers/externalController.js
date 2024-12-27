@@ -91,7 +91,7 @@ class ExternalController {
       : config.url
 
     
-    targetUrl = appendUrlQueryDelimiter(targetUrl) + `app=${config.app || 'NONE'}`
+    targetUrl = appendUrlQueryDelimiter(targetUrl) + `app=${config.app || 'NONE'}` // todo mb delete?
     
     console.log('targetUrl: ' + targetUrl)
 

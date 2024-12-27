@@ -14,6 +14,11 @@ router.post('/jobs/add', ExternalController.createExtJobApi)
 
 router.get('/jobs/refresh', MainController.refreshJobs)
 router.get('/make-request', MainController.makeRequest)
+
+/**
+ * Когда конфиг джоба создан только в во внутренне БД
+ * и нужно создать во внешнем сервисе джоб и записать ее id в нашу базу.
+ */
 router.get('/jobs/refresh-one/:id', MainController.createExtJobAndUpdateConfigApi)
 
 router.get('/get-updates', InitController.getUpdatesApi)
