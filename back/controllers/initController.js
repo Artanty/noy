@@ -132,8 +132,8 @@ class InitController {
         sendToStatResult = await this.sendRuntimeEventToStat(clientIP);
     } else {
         // If stat is not true, check the current time and whether the function was already called this minute
-        if (this.shouldRunStat(currentMinute) && lastExecutedMinute !== currentMinute) {
-            lastExecutedMinute = currentMinute; // Update the last executed minute
+        if (this.shouldRunStat(currentMinute) && this.lastExecutedMinute !== currentMinute) {
+            this.lastExecutedMinute = currentMinute; // Update the last executed minute
             sendToStatResult = await this.sendRuntimeEventToStat(clientIP);
         }
     }
