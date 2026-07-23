@@ -33,6 +33,7 @@ class InitController {
       .then(result => {
         // console.log(`table ${tableName} created`)
         // console.log(result)
+        // todo: send to stat
       })
     } catch (error) {
       console.error(error.message)
