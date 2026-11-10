@@ -143,6 +143,7 @@ class InitController {
         trigger: clientIP,
         PORT: process.env.PORT,
         isSendToStat: sendToStatResult,
+        updated: true
     });
   }
   
