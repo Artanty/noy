@@ -21,13 +21,13 @@ function readAxiosError (e, comment = '') {
 function filterAxiosError (e, comment = '') {
   let error
   if (e instanceof AxiosError) {
-    error = `${e.config.method} ${e.config.url}
+    error = `${e.config ? e.config.method : 'no config'} ${e.config ? e.config.url : ''}
             request data:
-            ${e.config.data}
+            ${e.config ? e.config.data : 'no config'}
             response:
-            ${e.response.status} ${e.response.statusText}
+            ${e.response ? `${e.response.status} ${e.response.statusText}` : 'no response (network error)'}
             response data:
-            ${e.response.data}`
+            ${e.response ? (typeof e.response.data === 'string' ? e.response.data : JSON.stringify(e.response.data)) : e.message}`
   } else {
     error = `Error is not an instance of AxiosError.`
   }

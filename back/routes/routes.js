@@ -14,6 +14,7 @@ router.post('/jobs/add', ExternalController.createExtJobApi)
 
 router.get('/jobs/refresh', MainController.refreshJobs)
 router.get('/make-request', MainController.makeRequest)
+router.get('/make-wake-request', MainController.makeWakeRequest)
 
 /**
  * Когда конфиг джоба создан только в во внутренне БД

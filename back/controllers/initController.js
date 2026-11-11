@@ -57,9 +57,10 @@ class InitController {
       .then(result => {
         if (!Array.isArray(result)) { throw new Error('Wrong response format.')}
         if (result.length !== count) {
+          const prefix = `${process.env.PROJECT_ID ? process.env.PROJECT_ID.toUpperCase() : ''}__`
           throw new Error(`Tables that don't exist: ${tableName
             .filter(initialTable => !result
-              .map(existingTable => existingTable.table_name.replace(`${process.env.PROJECT_ID.toUpperCase()}__`, ''))
+              .map(existingTable => (existingTable.table_name || '').replace(prefix, ''))
               .includes(initialTable))
             .join(", ")}\nCreate them to continue.`)
         }

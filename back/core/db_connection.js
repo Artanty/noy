@@ -13,7 +13,7 @@ const db = {
     }
 
     const body = {
-      app_name: process.env.PROJECT_ID.toUpperCase(),
+      app_name: `${process.env.PROJECT_ID ? process.env.PROJECT_ID.toUpperCase() : 'UNSET_PROJECT'}`,
       query: formattedQuery
     };
 

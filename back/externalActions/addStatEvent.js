@@ -23,7 +23,14 @@ async function addStatEvent(projectId) {
   try {
     return await axios.post(`${process.env.STAT_URL}/add-event`, payload);
   } catch (error) {
-    filterAxiosError(error, `Error with url ${process.env.STAT_URL}/add-event`);
+    // Telemetry must never break the main flow (a completed wake+request
+    // should not be reported as an error just because @stat is down).
+    try {
+      filterAxiosError(error, `Error with url ${process.env.STAT_URL}/add-event`);
+    } catch (formattedError) {
+      console.error(`addStatEvent (non-fatal): ${formattedError.message}`);
+    }
+    return false;
   }
 }
 
