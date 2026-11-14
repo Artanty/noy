@@ -146,3 +146,18 @@ Session log for the `noy/back` Node.js service (Express, Vercel). Kept small per
 - Node 18 engines pin (`package.json`), CommonJS modules throughout, axios for HTTP.
 - Existing routes live in `routes/routes.js`, controllers as class instances exported
   singletons (see `mainController.js`).
+
+## Plan (2026-11-15) - CORS for /make-wake-request (stat web noy-mode wake)
+
+stat@web (stat.twc1.net) wakes its Render back through noy via feat wake-up v3 noy mode
+(`GET {NOY_URL}/make-wake-request?target=…&app=stat` from the browser). Live test: the
+browser fetch died instantly with "noy unreachable" — noy has NO CORS headers, so the
+cross-origin response is blocked before the element ever sees it. Plan: add a permissive
+`Access-Control-Allow-Origin: *` middleware in `back/app.js` (simple GET, no preflight
+needed; wildcard is fine — the endpoint is public by design, same as it was on Vercel
+public URLs). NOTE: AGENTS says deploy target Vercel, but noy@back is now deployed on
+Render at https://ed-j5jw.onrender.com (user, 2026-11-15) — no Vercel function timeout
+anymore, but the service itself sleeps when idle.
+
+### Progress (2026-11-15)
+- Added the permissive ACAO middleware in `back/app.js` (before express.json, all routes). Verified locally on :3299 — `/make-wake-request?target=http://localhost:3299/&app=test` responds with `Access-Control-Allow-Origin: *` (404 body from the wake report, endpoint itself healthy). NOT deployed — needs a noy deploy before stat's noy-mode wake works in prod (deployed noy at ed-j5jw.onrender.com still lacks CORS).
