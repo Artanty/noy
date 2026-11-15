@@ -179,6 +179,30 @@ anymore, but the service itself sleeps when idle.
   Plus `GET /healthz`. Flask dev server (threaded by default) is enough for Timeweb.
 - AGENTS.md "Project quirks" will be updated to the Python reality.
 
+## Result (2026-11-16, 2) - githooklib reinstalled, back versioned 1.0.4
+
+- `rm -rf node_modules && npm install` in build/: githooklib 2.2.0 (npm latest, unchanged)
+  reinstalled, postinstall re-set `core.hooksPath` → `build/node_modules/githooklib/hooks`.
+- `back/pyproject.toml` created with `version = "1.0.4"` (continues node back's 1.0.3).
+  Verified with githooklib's own VersionManager: `getCurrentVersion(back)` → **1.0.4**
+  (resolveSource correctly skips missing back/package.json and picks pyproject.toml).
+- `build/.env` TAG_VERSION fixed 0.0.0.0.0.0 → 1.0.4.0.0.0 (the 0.0.0 run was the broken
+  state). On the next commit the pre-commit hook will see staged pyproject 1.0.4 vs HEAD
+  absent → "manually changed to 1.0.4" (no auto-bump), then rewrite TAG_VERSION — as intended.
+
+## Plan (2026-11-16, 2) - build/ githooklib reinstall + python back version 1.0.4
+
+- `build/` is the githooklib (2.2.0, user-authored) versioning hooks; repo
+  `core.hooksPath` → `build/node_modules/githooklib/hooks`. npm latest is still 2.2.0,
+  and the installed copy already supports python version sources (pyproject.toml,
+  `__version__` in .py) — resolveSource falls back when `back/package.json` is absent.
+- Why 11-15 wrote TAG_VERSION=0.0.0.0.0.0: no parsable back version chain at that state.
+- Plan: `rm -rf node_modules && npm install` in build/ (re-runs postinstall → re-sets
+  core.hooksPath); create `back/pyproject.toml` with version 1.0.4 (node back ended at
+  1.0.3 in back-nodejs-backup/package.json; pyproject is githooklib's preferred python
+  source and matches ../plst/back); fix stale build/.env TAG_VERSION → 1.0.4.0.0.0
+  (pre-commit rewrites it on every commit anyway, but leave it correct).
+
 ## Result (2026-11-16) - python back created and verified locally
 
 - `back` → `back-nodejs-backup` (plain `mv`; nothing staged, nothing committed).
