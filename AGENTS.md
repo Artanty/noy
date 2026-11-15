@@ -23,8 +23,12 @@ absolute-path reference works from any tool.
 
 ## Project quirks (environment)
 
-- Node 18 (`engines` in `back/package.json`), CommonJS, Express + axios.
-- Controllers are class-instance singletons (`controllers/*.js`), routes in
-  `back/routes/routes.js`.
-- Deploy target is Vercel (`back/vercel.json`) — mind function execution timeouts for
-  long-running endpoints (see `back/utils/wakeServer.js` history in DECISIONS.md).
+- Since 2026-11-16 `back/` is a Python service (Flask + requests + dotenv, modeled on
+  `../plst/back` but simplified): ONE function — `GET /wake` wakes the render.com backend
+  (`WAKE_TARGET` env or `?target=`) and waits until it is up. Run: `python app.py`
+  (default port 3211, venv in `back/venv/`). No DB, no history, no stat events.
+- The old Node build (Express + axios, controllers as class-instance singletons, DB +
+  history + stat) is kept as behavioral reference in `back-nodejs-backup/` — not deployed.
+- Deploy target (2026-11-15): Timeweb virtual hosting — always awake, no execution-time
+  cap. Earlier targets were Vercel (Hobby function timeout caps the synchronous wake) and
+  Render (sleeping-proxy problem) — both abandoned; see DECISIONS.md.

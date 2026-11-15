@@ -161,3 +161,45 @@ anymore, but the service itself sleeps when idle.
 
 ### Progress (2026-11-15)
 - Added the permissive ACAO middleware in `back/app.js` (before express.json, all routes). Verified locally on :3299 — `/make-wake-request?target=http://localhost:3299/&app=test` responds with `Access-Control-Allow-Origin: *` (404 body from the wake report, endpoint itself healthy). NOT deployed — needs a noy deploy before stat's noy-mode wake works in prod (deployed noy at ed-j5jw.onrender.com still lacks CORS).
+
+## Plan (2026-11-16) - noy@back rewritten in Python (simplified, wake-only)
+
+- Node version stays as reference: `back` → `back-nodejs-backup` (plain `mv`, no git staging —
+  user commits when ready). Root .gitignore already covers node_modules/.env for the backup.
+- New `back` = Python (Flask + requests + dotenv), modeled on `../plst/back` structure but
+  much smaller. ONE function: wake a render.com backend. Website calls it at startup and
+  waits for the response (no request-forwarding, no DB, no history, no stat events).
+- Files: `app.py` (Flask app, CORS `*` like the node build), `wake.py` (port of node
+  `utils/wakeServer.js` `wakeGeneric` — the validated "probe → 60s silence → probe" strategy,
+  browser headers, awake statuses 200/204/301/302/401/403/404, 185s budget, 10s probe
+  timeout), `config.py` (env: HOST/PORT 3211, WAKE_TARGET, timing overrides),
+  `requirements.txt`, `.env.example`, `.gitignore` (venv/__pycache__/.env).
+- API: `GET /wake[?target=<url>][&maxWaitMs=<ms>]` — target defaults to env WAKE_TARGET.
+  200 `{awake:true, attempts, elapsedMs, target}` / 504 `{awake:false, …}` when budget spent.
+  Plus `GET /healthz`. Flask dev server (threaded by default) is enough for Timeweb.
+- AGENTS.md "Project quirks" will be updated to the Python reality.
+
+## Result (2026-11-16) - python back created and verified locally
+
+- `back` → `back-nodejs-backup` (plain `mv`; nothing staged, nothing committed).
+- New `back/`: `app.py` (Flask, CORS `*`, `GET /wake`, `GET /healthz`), `wake.py` (port of
+  node `wakeGeneric`: browser headers, GET probe, 60s silent pause, awake statuses
+  200/204/301/302/401/403/404, budget-aware sleep so a short `maxWaitMs` fails fast),
+  `config.py` (HOST/PORT 3211/WAKE_TARGET + WAKE_* timings), `requirements.txt`
+  (flask/requests/python-dotenv), `.env.example`, `.gitignore`. venv in `back/venv/`.
+- Verified on :3299 — awake target → `200 {awake:true, attempts:1}`; no target → 400;
+  dead target + `maxWaitMs=3000` → 504 after exactly the budget; ACAO header present.
+- Gotcha: wake-flow `print`s were invisible in the redirected log (stdout block buffering;
+  werkzeug access log goes to stderr). Fixed with `sys.stdout.reconfigure(line_buffering=True)`
+  in `app.py` main — SUCCESS/FAILURE lines now flush immediately (hosting logs need this).
+- Flask's `app.run()` is threaded by default, so a blocking 185s `/wake` does not stall
+  `/healthz`. No `/make-wake-request` request-forwarding: consumers wake via `/wake`, then
+  hit the target themselves.
+
+## Decision (2026-11-15, 2) - noy@back moves to Timeweb virtual hosting
+- Render is out (user): the sleeping-proxy problem (wake-the-waker) makes Render a bad
+  fit for noy's role. Vercel rejected (Hobby function timeout caps the synchronous wake).
+- Target: Timeweb virtual hosting — always awake, no execution-time cap, same host as
+  stat (stat.twc1.net) and feat (feat.twc1.net). User deploys manually ("i'll deploy it
+  to tw virtual hosting"); the ACAO CORS fix (entry above) rides along.
+- Consumers then point NOY_URL at the new address (stat@web env on its deploy).
