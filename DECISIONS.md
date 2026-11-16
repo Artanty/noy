@@ -220,6 +220,31 @@ anymore, but the service itself sleeps when idle.
   `/healthz`. No `/make-wake-request` request-forwarding: consumers wake via `/wake`, then
   hit the target themselves.
 
+## Plan (2026-11-16, 3) - fix noy VH deploy (flask>=3.0 unresolvable on slot python 3.6)
+
+- Failed slave run: slot venv is python 3.6 (old pip), no `flask>=3.0` wheel exists there
+  → pip install failed, workflow refused restart. feat deploys fine with `flask>=2.0`.
+- Changes to `back/`:
+  - `requirements.txt` floor-pinned py3.6-compatible: `flask>=2.0`, `requests>=2.27`
+    (2.31 needs py3.7), `python-dotenv>=0.20` (1.0 needs py3.8).
+  - Add `index.wsgi` (chmod 755, feat pattern: logging to stderr first, append slot
+    venv site-packages to sys.path, import `app` as `application`) + `.htaccess`
+    (wsgi-script handler, rewrite to /index.wsgi/$1) — Timeweb VH has NO Passenger;
+    Apache wsgi-script is the serving pattern (know: deploy-slave, feat).
+  - Guard `sys.stdout.reconfigure` (py3.7+; absent on 3.6) in `app.py` __main__.
+- Update know `entries/deploy-timeweb-vh.md` with the python-back config section
+  (py3.6 pins, index.wsgi/.htaccess, rsync-exec-bit note).
+- The failed run already synced code + created the slot venv but never restarted — next
+  `-d` deploy finishes it (wsgi mtime change re-imports anyway).
+
+## Result (2026-11-16, 3) - back fixed for slot python 3.6
+
+- `back/requirements.txt`: flask>=2.0, requests>=2.27, python-dotenv>=0.20.
+- `back/index.wsgi` added (755, feat pattern adapted: exposes Flask `app`, appends
+  venv/lib/python*/site-packages, stderr logging) + `back/.htaccess` (wsgi-script +
+  rewrite). `app.py` reconfigure guarded with hasattr (py3.6-safe).
+- know `entries/deploy-timeweb-vh.md`: new "Python backend on the slot" section.
+
 ## Decision (2026-11-15, 2) - noy@back moves to Timeweb virtual hosting
 - Render is out (user): the sleeping-proxy problem (wake-the-waker) makes Render a bad
   fit for noy's role. Vercel rejected (Hobby function timeout caps the synchronous wake).

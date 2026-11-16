@@ -63,5 +63,7 @@ if __name__ == "__main__":
     import sys
 
     # wake-flow prints must land in the hosting log immediately, not in stdout's block buffer
-    sys.stdout.reconfigure(line_buffering=True)
+    # (reconfigure is py3.7+ — the VH host python is 3.6, local runs are newer)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
     app.run(host=HOST, port=PORT, debug=False)
