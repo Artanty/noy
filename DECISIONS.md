@@ -237,6 +237,36 @@ anymore, but the service itself sleeps when idle.
 - The failed run already synced code + created the slot venv but never restarted — next
   `-d` deploy finishes it (wsgi mtime change re-imports anyway).
 
+## Plan (2026-11-16, 4) - add /make-wake-request (feat wake-up v3 noy-mode contract)
+
+- stat@web (feat wake-up v3, mode=noy) calls from the browser:
+  `GET {NOY_URL}/make-wake-request?target=…&app=…` and reads
+  `{request:'completed', wake:{awake, attempts, elapsedMs, strategy}}` (resp.ok required;
+  wake-up v3 runNoy: `resp.ok && body.request==='completed' && wake.awake` → success).
+- Changes in `back/`:
+  - `wake.py`: strategy detection like feat v3 (`*.onrender.com`→render, snapdeploy
+    containers→snapdeploy wake-POST + 3s HEAD poll, else→poll probe loop); keep the
+    existing probe-pause loop as the render/poll strategy. Dispatcher `wake_server()`.
+  - `app.py`: `GET /make-wake-request[?target=&app=&maxWaitMs=]` — wake via dispatcher,
+    200 `{request:'completed', wake:{…}}` when awake, 504 `{request:'failed', wake:{…}}`
+    when budget spent. `app` is a stat label only (py back has no stat) → logged.
+    `/wake` stays as-is (python-native consumers).
+- Test locally against an awake target + short-budget dead target.
+
+## Result (2026-11-16, 4) - /make-wake-request added (feat wake-up v3 noy contract)
+
+- `back/wake.py`: strategy detection (feat v3 parity: onrender→render, snapdeploy
+  containers→snapdeploy wake-POST + 3s HEAD poll ≠503, else→poll). `wake_server()`
+  dispatcher; probe-pause loop renamed `wake_probe` (`wake_render` kept as alias).
+  py3.6-safe: no f-strings added in wake.py (`.format`), regex module import.
+- `back/app.py`: `GET /make-wake-request?target=&app=&maxWaitMs=` → 200
+  `{request:'completed', wake:{…}}` / 504 `{request:'failed', wake:{…}}` / 400 no target.
+  `app` label log-only (no stat in py back). `/wake` unchanged, now via dispatcher.
+- Verified locally: awake target → 200 completed (ACAO `*` present); dead target +
+  2s budget → 504 after exactly the budget; no target → 400; `/wake` regression OK;
+  wsgi import OK. NOT deployed — needs a `-d` commit; the browser request from stat
+  (noy.twc1.net) will 404 until then.
+
 ## Result (2026-11-16, 3) - back fixed for slot python 3.6
 
 - `back/requirements.txt`: flask>=2.0, requests>=2.27, python-dotenv>=0.20.

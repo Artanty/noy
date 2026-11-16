@@ -17,7 +17,7 @@ from config import (  # noqa: E402  (after load_dotenv)
     WAKE_TARGET,
     WAKE_TOTAL_WAIT_MS,
 )
-from wake import wake_render  # noqa: E402
+from wake import wake_server  # noqa: E402
 
 app = Flask(__name__)
 
@@ -45,7 +45,7 @@ def wake():
         return jsonify({"error": 'Missing "target" query param and WAKE_TARGET is not set'}), 400
     max_wait_ms = request.args.get("maxWaitMs", type=int) or WAKE_TOTAL_WAIT_MS
 
-    report = wake_render(
+    report = wake_server(
         target,
         total_wait_ms=max_wait_ms,
         probe_pause_ms=WAKE_PROBE_PAUSE_MS,
@@ -57,6 +57,34 @@ def wake():
         return jsonify({"error": f"Server did not wake up within {max_wait_ms}ms", **report}), 504
     print(f"✅ SUCCESS: {target} awake in {round(report['elapsedMs'] / 1000)}s, {report['attempts']} check(s)")
     return jsonify(report)
+
+
+@app.get("/make-wake-request")
+def make_wake_request():
+    """feat wake-up v3 `noy` mode contract — the browser calls
+    GET /make-wake-request?target=<url>&app=<project>[&maxWaitMs=<ms>] and reads
+    {request: "completed", wake: {awake, attempts, elapsedMs, strategy}}.
+    200 + request=completed when awake; 504 + request=failed when the budget runs out.
+    `app` is only a label for the log (the python back has no stat events)."""
+    target = request.args.get("target")
+    if not target:
+        return jsonify({"request": "failed", "error": 'Missing "target" query param'}), 400
+    app_label = request.args.get("app") or "-"
+    max_wait_ms = request.args.get("maxWaitMs", type=int) or WAKE_TOTAL_WAIT_MS
+
+    print(f"make-wake-request app={app_label} target={target} budget={max_wait_ms}ms")
+    report = wake_server(
+        target,
+        total_wait_ms=max_wait_ms,
+        probe_pause_ms=WAKE_PROBE_PAUSE_MS,
+        check_timeout_ms=WAKE_CHECK_TIMEOUT_MS,
+    )
+    report["target"] = target
+    if not report["awake"]:
+        print(f"❌ FAILURE: app={app_label} did not wake up within {max_wait_ms}ms: {target}")
+        return jsonify({"request": "failed", "error": f"Server did not wake up within {max_wait_ms}ms", "wake": report}), 504
+    print(f"✅ SUCCESS: app={app_label} {target} awake in {round(report['elapsedMs'] / 1000)}s, {report['attempts']} check(s)")
+    return jsonify({"request": "completed", "wake": report})
 
 
 if __name__ == "__main__":
