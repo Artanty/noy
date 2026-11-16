@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 
+
 # Apache's wsgi-script handler captures stderr → hosting log. Configure first so the
 # import failure below is actually visible (it used to vanish silently).
 logging.basicConfig(
