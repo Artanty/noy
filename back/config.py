@@ -4,10 +4,11 @@ Keys are documented in .env.example. The node build's HOST/PORT keep their meani
 WAKE_TARGET and the WAKE_* timings are new.
 """
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
 def _int(name, default):

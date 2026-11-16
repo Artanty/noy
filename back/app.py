@@ -4,10 +4,15 @@ response; CORS is open so a browser can call it cross-origin.
 
 Run: `python app.py` (listens on HOST:PORT from .env, default 0.0.0.0:3211).
 """
+from pathlib import Path
+
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 
-load_dotenv()
+# explicit path: under Apache wsgi-script the cwd is not the app dir, so a bare
+# load_dotenv() finds nothing and every .env flag (FEAT_THRU, WAKE_TARGET) silently
+# evaluates unset — found live as FEAT_THRU=off on noy.twc1.net
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 from config import (  # noqa: E402  (after load_dotenv)
     FEAT_THRU,

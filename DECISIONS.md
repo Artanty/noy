@@ -290,6 +290,51 @@ anymore, but the service itself sleeps when idle.
 ### Progress (2026-11-16, 2)
 - Vendored feat thru v1 (back/thru.py, copy of feat features/thru/v1/py/thru.py); config.py FEAT_THRU; app.py registers thru_bp ONLY under FEAT_THRU=true; .env.example documents it. Verified locally on :3299: flag ON → GET /thru?target=…/healthz mirrors {"ok":true,…} (200); flag OFF → /thru 404 while /healthz + wake routes intact. NOT deployed — noy needs a `-d` with FEAT_THRU=true in its env.
 
+## Plan (2026-11-17) - add noy python-back APIs to Postman private "noy" collection
+
+- User: "add noy's appis" = noy@back (python) API endpoints to the Postman collection
+  "noy" in workspace "private" (a30e2adc-…, id 13841909-cd8d8f39-…, 23 requests, many
+  legacy node-era ones).
+- MCP postman tools 401 → postman CLI (v1.86.0, logged in). `collection request add/update`
+  and `collection folder add` support cloud mode via `-w`.
+- Plan: new folder "python back (timeweb)" with the current API surface:
+  `/wake?target=&maxWaitMs=`, `/make-wake-request?target=&app=&maxWaitMs=` (feat wake-up v3
+  noy contract, {request:'completed', wake:{…}}), `/healthz`, `/thru?target=` (FEAT_THRU),
+  `/version.json`, `/` (version-display page). All on `{{NOY_back_domain}}`. Also update the
+  stale root "wake request" entry (node-era method=/body= params) to the current contract.
+
+### Result (2026-11-17)
+- Done via postman CLI cloud mode (`-w`). Folder "python back (timeweb)"
+  (13841909-759e85d8-…) now holds 6 requests: wake, make-wake-request, healthz, thru,
+  version.json, root page — URLs on {{NOY_back_domain}}, each with a description of the
+  response contract. Root "wake request" (13841909-9d8817d8-…) updated to the py contract
+  (target/app/maxWaitMs, note that method=/body= no longer exist).
+- CLI quirk: postman CLI commands hang after printing their output (never exit) — run in
+  background and kill after the JSON lands.
+
+## Result (2026-11-17, 2) - dotenv explicit path fixed (local wsgi-sim verify)
+
+- `back/app.py` + `back/config.py`: `load_dotenv(Path(__file__).resolve().parent / ".env")`.
+- Verified wsgi-style (cwd=/tmp, sys.path to back/, temp back/.env with FEAT_THRU=true):
+  `/thru` in url_map, all routes present; temp .env removed afterwards.
+- NOT deployed — a `-d` commit is needed (user's call) for noy.twc1.net to pick it up;
+  after deploy the `/` page should show "FEAT_THRU=on" and stat's deploy tab should work.
+
+## Plan (2026-11-17, 2) - fix FEAT_THRU=off on deployed noy (dotenv path under wsgi)
+
+- Symptom: stat deploy tab → noy /thru 404; noy / page shows "FEAT_THRU=off" although the
+  slave .env has FEAT_THRU=true. Deploy run 43969341334 (trig -d;, v1.0.9) used the FIXED
+  vh-deploy workflow and rsynced `.env` to the slot (rsync log line confirms), and the live
+  code is that run's (version.json 1.0.9) — so file+code are correct on the slot.
+- Root cause: `load_dotenv()` (no args) in app.py/config.py resolves .env from cwd/stack —
+  under Apache wsgi-script the cwd is not the app dir, so nothing loads and FEAT_THRU
+  evaluates false (silently). Same class as the earlier wake_target=null.
+- Fix: `load_dotenv(Path(__file__).resolve().parent / ".env")` (explicit, py3.6-safe) in
+  app.py AND config.py (config.py loads its own too — both call sites get the explicit path).
+  Local `python app.py` unaffected. Verify by importing app from a foreign cwd with a temp
+  back/.env (FEAT_THRU=true) and checking /thru is in url_map, then remove the temp file.
+  NOT deployed — needs a `-d` (user's call).
+
 ## Plan (2026-11-16, 3) - Root page '/' with version-display + /version.json
 - User request: noy@back gets a simple back page at '/' carrying the feat version-display badge.
 - Plan: /version.json serves {version (pyproject.toml), project: noy, namespace: back}; '/' renders minimal HTML (no deps) loading feat version-display v4 js-web from FEAT_URL (env, default https://feat.twc1.net) + <deploy-info src="/version.json" manifest="{FEAT_URL}/manifest.json">; .env.example documents FEAT_URL. Local verify with feat :5477.
