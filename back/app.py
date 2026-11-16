@@ -10,6 +10,7 @@ from flask import Flask, jsonify, request
 load_dotenv()
 
 from config import (  # noqa: E402  (after load_dotenv)
+    FEAT_THRU,
     HOST,
     PORT,
     WAKE_CHECK_TIMEOUT_MS,
@@ -20,6 +21,14 @@ from config import (  # noqa: E402  (after load_dotenv)
 from wake import wake_server  # noqa: E402
 
 app = Flask(__name__)
+
+# feat thru feature (backend-thru slot, vendored thru.py from
+# feat/back/features/thru/v1/py/): ONLY under FEAT_THRU=true does this app gain the
+# GET|POST /thru pass-through endpoint — the backend doesn't have it by itself.
+if FEAT_THRU:
+    from thru import thru_bp
+
+    app.register_blueprint(thru_bp)
 
 
 @app.after_request

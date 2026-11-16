@@ -282,3 +282,10 @@ anymore, but the service itself sleeps when idle.
   stat (stat.twc1.net) and feat (feat.twc1.net). User deploys manually ("i'll deploy it
   to tw virtual hosting"); the ACAO CORS fix (entry above) rides along.
 - Consumers then point NOY_URL at the new address (stat@web env on its deploy).
+
+## Plan (2026-11-16, 2) - Inject feat thru feature (FEAT_THRU flag)
+- User decision: noy's plain proxy role moves to the shared feat `thru` feature (feat/back/features/thru/v1/py/thru.py); the backend earns the `/thru` endpoint ONLY when the feature is injected — config flag decides (know feature-slots.md backend slots).
+- Plan: vendor thru.py into noy/back/ (consumer contract, like logging/db-diag in plst); config.py `FEAT_THRU` (env FEAT_THRU=true); app.py registers thru_bp ONLY under that flag; .env.example documents FEAT_THRU=true. Verify locally: with flag on, /thru proxies /healthz; with flag off, 404. Wake endpoints (/wake, /make-wake-request) untouched — user: "it is working, don't change it".
+
+### Progress (2026-11-16, 2)
+- Vendored feat thru v1 (back/thru.py, copy of feat features/thru/v1/py/thru.py); config.py FEAT_THRU; app.py registers thru_bp ONLY under FEAT_THRU=true; .env.example documents it. Verified locally on :3299: flag ON → GET /thru?target=…/healthz mirrors {"ok":true,…} (200); flag OFF → /thru 404 while /healthz + wake routes intact. NOT deployed — noy needs a `-d` with FEAT_THRU=true in its env.
