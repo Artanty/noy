@@ -31,3 +31,6 @@ WAKE_CHECK_TIMEOUT_MS = _int("WAKE_CHECK_TIMEOUT_MS", 10000)  # per-probe timeou
 # feat thru feature (backend-thru slot): true = register the /thru pass-through
 # blueprint (vendored thru.py). Off/unset = the endpoint does not exist.
 FEAT_THRU = os.environ.get("FEAT_THRU", "").strip().lower() == "true"
+
+# feat host serving the web-component bundles for the '/' page (version-display badge).
+FEAT_URL = (os.environ.get("FEAT_URL") or "https://feat.twc1.net").rstrip("/")

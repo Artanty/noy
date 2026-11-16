@@ -289,3 +289,11 @@ anymore, but the service itself sleeps when idle.
 
 ### Progress (2026-11-16, 2)
 - Vendored feat thru v1 (back/thru.py, copy of feat features/thru/v1/py/thru.py); config.py FEAT_THRU; app.py registers thru_bp ONLY under FEAT_THRU=true; .env.example documents it. Verified locally on :3299: flag ON → GET /thru?target=…/healthz mirrors {"ok":true,…} (200); flag OFF → /thru 404 while /healthz + wake routes intact. NOT deployed — noy needs a `-d` with FEAT_THRU=true in its env.
+
+## Plan (2026-11-16, 3) - Root page '/' with version-display + /version.json
+- User request: noy@back gets a simple back page at '/' carrying the feat version-display badge.
+- Plan: /version.json serves {version (pyproject.toml), project: noy, namespace: back}; '/' renders minimal HTML (no deps) loading feat version-display v4 js-web from FEAT_URL (env, default https://feat.twc1.net) + <deploy-info src="/version.json" manifest="{FEAT_URL}/manifest.json">; .env.example documents FEAT_URL. Local verify with feat :5477.
+
+### Progress (2026-11-16, 3)
+- '/' page (no deps, inline HTML): noy@back title, links /healthz /wake /thru (with FEAT_THRU on/off shown), version-display v4 badge (`<deploy-info src="/version.json" manifest="{FEAT_URL}/manifest.json">`, bundle from FEAT_URL — config.py FEAT_URL default https://feat.twc1.net, .env.example row). /version.json serves pyproject version (githooklib-bumped) + project/namespace.
+- Verified locally (FEAT_URL=http://localhost:5477 feat dev): /version.json {"version":"1.0.7",...}, page renders, badge shows v1.0.7. Also verified this session: stat deploy tab through local noy /thru renders full runs list — the prod "deploy tab doesn't work" (HAR 15:33) is ONLY the deployed noy missing /thru (404); needs the noy `-d` (FEAT_THRU=true already in .env.example).

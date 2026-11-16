@@ -11,6 +11,7 @@ load_dotenv()
 
 from config import (  # noqa: E402  (after load_dotenv)
     FEAT_THRU,
+    FEAT_URL,
     HOST,
     PORT,
     WAKE_CHECK_TIMEOUT_MS,
@@ -42,6 +43,52 @@ def add_cors(response):
 @app.get("/healthz")
 def healthz():
     return jsonify({"ok": True, "wake_target": WAKE_TARGET})
+
+
+def _version():
+    """pyproject.toml is the version source (githooklib bumps it on deploy)."""
+    import re
+    from pathlib import Path
+
+    text = (Path(__file__).resolve().parent / "pyproject.toml").read_text()
+    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
+    return match.group(1) if match else "0.0.0"
+
+
+@app.get("/version.json")
+def version_json():
+    return jsonify({"version": _version(), "project": "noy", "namespace": "back"})
+
+
+@app.get("/")
+def index():
+    """Simple back page: what this service is + the feat version-display badge."""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noy@back</title>
+<style>
+  body {{ font: 14px/1.6 ui-monospace, Menlo, Consolas, monospace; margin: 40px auto; max-width: 560px; color: #ddd; background: #1c1c1c; }}
+  h1 {{ font-size: 16px; margin: 0 0 12px; }}
+  a {{ color: #4d9fff; }}
+  ul {{ margin: 8px 0; padding-left: 20px; }}
+  .badge-host {{ position: static; display: inline-block; }}
+</style>
+</head>
+<body>
+<h1>noy@back</h1>
+<p>wakes render.com backends and passes requests through.</p>
+<ul>
+  <li><a href="/healthz">/healthz</a> — liveness</li>
+  <li><a href="/wake">/wake</a> — wake WAKE_TARGET (feat wake-up via /make-wake-request)</li>
+  <li><a href="/thru">/thru</a> — feat thru pass-through (FEAT_THRU={'on' if FEAT_THRU else 'off'})</li>
+</ul>
+<script src="{FEAT_URL}/version-display/v4/js-web/"></script>
+<span class="badge-host"><deploy-info src="/version.json" manifest="{FEAT_URL}/manifest.json"></deploy-info></span>
+</body>
+</html>"""
 
 
 @app.get("/wake")
