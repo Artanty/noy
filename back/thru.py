@@ -1,4 +1,4 @@
-"""thru feature v2 — request pass-through for backend servers (python/Flask).
+"""thru feature v3 — request pass-through for backend servers (python/Flask).
 
 Contract: back/docs/thru.md. Consumers VENDOR this file and register the blueprint:
 
@@ -67,10 +67,12 @@ def _fetch(url, method, body, extra_headers, timeout_s):
     connect/timeout failures (surfaced as 502 with the reason in X-Thru-Error).
     """
     data = None
-    headers = {"user-agent": "feat-thru/2"}
+    headers = {"user-agent": "feat-thru/3"}
     headers.update({str(k).lower(): str(v) for k, v in (extra_headers or {}).items()
                     if str(k).lower() not in _HOP_HEADERS})
-    if body and method != "get" and "content-type" not in headers:
+    # v3: the body is attached ALWAYS — v2 skipped it when the caller supplied a
+    # content-type, silently dropping every such POST body (live chat@web bug)
+    if body and method != "get":
         data = body.encode("utf-8")
         headers.setdefault("content-type", "application/json")
     req = urllib.request.Request(url, data=data, method=method.upper(), headers=headers)

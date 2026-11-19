@@ -29,7 +29,7 @@ from wake import wake_server  # noqa: E402
 app = Flask(__name__)
 
 # feat thru feature (backend-thru slot, vendored thru.py from
-# feat/back/features/thru/v2/py/): ONLY under FEAT_THRU=true does this app gain the
+# feat/back/features/thru/v3/py/): ONLY under FEAT_THRU=true does this app gain the
 # GET|POST /thru pass-through endpoint — the backend doesn't have it by itself.
 if FEAT_THRU:
     from thru import thru_bp

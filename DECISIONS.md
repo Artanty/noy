@@ -438,3 +438,20 @@ anymore, but the service itself sleeps when idle.
 - NOT deployed — needs noy's `-d` (user's call). After deploy chat.twc1.net needs
   NOTHING redeployed: THRU_URL already points at noy, the browser preflights will
   just start passing.
+
+## Plan (2026-11-19, 2) - noy thru v2 → v3 (body-drop fix)
+Live HAR: verify POST body never reached chat/back (400 "code must be a 6-digit
+string") — thru's _fetch attaches data only when content-type is ABSENT from
+caller headers; chat always sends it. Vendor feat's v3 (fix: always attach body,
+setdefault content-type). Verify locally with an in-process echo server asserting
+the body arrives. Needs noy's -d (user).
+
+## Result (2026-11-19, 2) - noy thru v3 vendored + verified locally (body-drop fix)
+- back/thru.py = feat's v3 (_fetch attaches the body ALWAYS; v2 dropped it whenever
+  the caller supplied content-type — the live "code must be a 6-digit string"
+  400). app.py vendor comment v2→v3.
+- Verified with an in-process echo server through the real registration path
+  (FEAT_THRU=true at import): POST /thru with targetHeaders Content-Type +
+  targetBody '{"code":"464913",...}' → echo received the FULL body + content-type.
+- NOT deployed — needs noy's -d (user's call). After it, chat.twc1.net verify
+  should pass with no other changes (chat/web redeploy NOT needed).

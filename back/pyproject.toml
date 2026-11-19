@@ -1,5 +1,5 @@
 [project]
 name = "noy-back"
-version = "1.0.13"
+version = "1.0.14"
 description = "noy backend (python port — the node build stays as reference in back-nodejs-backup)"
 requires-python = ">=3.9"
