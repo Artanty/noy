@@ -412,3 +412,29 @@ anymore, but the service itself sleeps when idle.
 ### Progress (2026-11-16, 3)
 - '/' page (no deps, inline HTML): noy@back title, links /healthz /wake /thru (with FEAT_THRU on/off shown), version-display v4 badge (`<deploy-info src="/version.json" manifest="{FEAT_URL}/manifest.json">`, bundle from FEAT_URL — config.py FEAT_URL default https://feat.twc1.net, .env.example row). /version.json serves pyproject version (githooklib-bumped) + project/namespace.
 - Verified locally (FEAT_URL=http://localhost:5477 feat dev): /version.json {"version":"1.0.7",...}, page renders, badge shows v1.0.7. Also verified this session: stat deploy tab through local noy /thru renders full runs list — the prod "deploy tab doesn't work" (HAR 15:33) is ONLY the deployed noy missing /thru (404); needs the noy `-d` (FEAT_THRU=true already in .env.example).
+
+## Plan (2026-11-19) - up noy's thru v1.2 → v2 (CORS preflight)
+- Symptom (chat.twc1.net HAR + curl): chat@web POSTs /thru to noy.twc1.net; OPTIONS
+  returns 200 with NO Access-Control-Allow-Headers (Flask automatic OPTIONS) → the
+  browser blocks every preflighted POST → zero API traffic. noy's vendored back/thru.py
+  is v1.2; thru v2 (explicit OPTIONS route + ACAM/ACAH on all responses,
+  provide_automatic_options=False on the main route) lives in feat
+  (feat/back/src/thru/v2/py/thru.py) and is already deployed on feat.twc1.net.
+- Plan: copy feat's v2 thru.py over back/thru.py (flat vendor, same import surface
+  `from thru import thru_bp`; py3.6-safe style like v1); user keeps THRU_URL=noy.
+  Verify locally: url_map + test_client OPTIONS preflight echoes ACAH + POST body-form
+  relays (mocked _fetch). NOT deployed — needs noy's `-d` (user's call).
+
+## Result (2026-11-19) - noy thru v2 vendored + verified locally
+- back/thru.py replaced with feat's v2 (src/thru/v2/py/thru.py — explicit OPTIONS
+  preflight route + ACAM/ACAH on every response, provide_automatic_options=False,
+  user-agent feat-thru/2); app.py vendor-path comment bumped v1→v2. py3.6-safe
+  (same style as v1: f-strings yes, nothing 3.7+).
+- Verified (test_client, FEAT_THRU=true at import — the gate reads config at import
+  time, setting it after exec_module silently leaves /thru unregistered):
+  OPTIONS /thru → 200, ACAH echoes "content-type, x-totp-auth", ACAM
+  GET/POST/OPTIONS, Max-Age 600; POST body-form relay → 200 (real fetch of
+  feat.twc1.net/manifest.json); GET query-form → 200 + ACAO *.
+- NOT deployed — needs noy's `-d` (user's call). After deploy chat.twc1.net needs
+  NOTHING redeployed: THRU_URL already points at noy, the browser preflights will
+  just start passing.

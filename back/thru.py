@@ -1,15 +1,22 @@
-"""thru feature — request pass-through for backend servers (python/Flask).
+"""thru feature v2 — request pass-through for backend servers (python/Flask).
 
 Contract: back/docs/thru.md. Consumers VENDOR this file and register the blueprint:
 
     from thru import thru_bp
-    app.register_blueprint(thru_bp)          # serves GET|POST /thru
+    app.register_blueprint(thru_bp)          # serves GET|POST|OPTIONS /thru
 
 A backend hosting thru lets other apps (typically a browser frontend that cannot reach
 some origin directly — e.g. the user's network blocks the target host) make that request
 through the backend instead: the backend's network does the fetch and mirrors the
 upstream response back. Origin: noy/back's make-request; generalized here as a feat
 feature so ANY backend can host it (python first).
+
+v2 delta: CORS PREFLIGHT support — an explicit OPTIONS /thru route plus
+Access-Control-Allow-Methods/Allow-Headers on every response. A cross-origin POST with
+Content-Type: application/json (how browsers pass targetHeaders/targetBody) is
+preflighted; v1 answered OPTIONS only via Flask's automatic OPTIONS, which omits
+Allow-Headers, so the browser killed the preflight and the POST never flew (GET-only
+consumers like stat never noticed).
 
 Route (GET or POST /thru), query params (POST may instead carry them as a JSON object
 body with keys target/targetMethod/targetBody/targetHeaders/targetTimeoutS; query params
@@ -52,7 +59,7 @@ def _allowed(target_host: str) -> bool:
 _HOP_HEADERS = {"connection", "content-length", "transfer-encoding", "host", "accept-encoding"}
 
 
-def _fetch(url: str, method: str, body: str, extra_headers, timeout_s: int):
+def _fetch(url, method, body, extra_headers, timeout_s):
     """Perform the upstream request. Standalone so tests can mock it.
 
     extra_headers: caller-supplied headers (the `headers` query param), merged over the
@@ -60,7 +67,7 @@ def _fetch(url: str, method: str, body: str, extra_headers, timeout_s: int):
     connect/timeout failures (surfaced as 502 with the reason in X-Thru-Error).
     """
     data = None
-    headers = {"user-agent": "feat-thru/1"}
+    headers = {"user-agent": "feat-thru/2"}
     headers.update({str(k).lower(): str(v) for k, v in (extra_headers or {}).items()
                     if str(k).lower() not in _HOP_HEADERS})
     if body and method != "get" and "content-type" not in headers:
@@ -78,7 +85,9 @@ def _fetch(url: str, method: str, body: str, extra_headers, timeout_s: int):
 thru_bp = Blueprint("thru", __name__)
 
 
-@thru_bp.route("/thru", methods=["GET", "POST"])
+# provide_automatic_options=False: Flask's automatic OPTIONS would otherwise shadow the
+# explicit preflight route below (same URL, and the automatic handler wins the match)
+@thru_bp.route("/thru", methods=["GET", "POST"], provide_automatic_options=False)
 def thru():
     if os.environ.get("THRU_DISABLED", "").strip().lower() == "true":
         return Response(json.dumps({"request": "error", "error": "thru disabled"}), status=503,
@@ -133,7 +142,8 @@ def thru():
                         content_type="application/json")
     if method not in ALLOWED_METHODS:
         return Response(json.dumps({"request": "error", "error": f"method must be {'|'.join(ALLOWED_METHODS)}"}),
-                        status=400, content_type="application/json")
+                        status=400,
+                        content_type="application/json")
 
     from urllib.parse import urlsplit
     host = urlsplit(target).hostname or ""
@@ -156,9 +166,25 @@ def thru():
     return resp
 
 
+@thru_bp.route("/thru", methods=["OPTIONS"])
+def thru_preflight():
+    """Explicit CORS preflight (v2): echo the browser's requested headers back.
+    Flask's automatic OPTIONS omits Access-Control-Allow-Headers, which kills any
+    preflighted POST — the whole reason v2 exists."""
+    resp = Response()
+    requested = request.headers.get("Access-Control-Request-Headers", "").strip()
+    resp.headers["Access-Control-Allow-Headers"] = requested or "Content-Type"
+    resp.headers["Access-Control-Max-Age"] = "600"
+    return resp
+
+
 @thru_bp.after_request
 def _cors(resp: Response) -> Response:
     # browser consumers are the point — the target origin is often unreachable from
-    # the page's network, so the thru host must be readable cross-origin
+    # the page's network, so the thru host must be readable cross-origin. v2 adds
+    # methods/allow-headers so preflighted POSTs (JSON bodies with targetHeaders)
+    # pass alongside preflight-free GETs.
     resp.headers.setdefault("Access-Control-Allow-Origin", "*")
+    resp.headers.setdefault("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    resp.headers.setdefault("Access-Control-Allow-Headers", "Content-Type")
     return resp
