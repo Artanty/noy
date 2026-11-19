@@ -1,5 +1,25 @@
 # DECISIONS.md
 
+## Plan (2026-11-19, 3) - thru v1.2: rename POST body props to target* prefix
+
+- User wants POST /thru JSON body props named for what they describe: `target`,
+  `targetMethod`, `targetBody`, `targetHeaders`, `targetTimeoutS` (was bare
+  method/body/headers/timeout_s). v1.2 shape never deployed, so rename in place — no
+  compat aliases.
+- Plan: rename keys in thru.py route parsing + docstring, update tests, docs (thru.md
+  param table + note), vendor to noy/back/thru.py, run pytest. NOT deployed.
+
+## Result (2026-11-19, 3) - thru v1.2 target* props
+
+- Renamed POST body keys to target/targetMethod/targetBody/targetHeaders/targetTimeoutS
+  (thru.py route + docstring, docs/thru.md, tests — incl. new 400 test for non-object
+  targetHeaders). 17/17 pass. Vendored byte-identical to noy/back/thru.py.
+- Postman for flow retrigger via noy thru:
+  POST {{NOY_back_domain}}/thru  {target: {{FLOW_back_domain}}/retrigger, targetMethod:
+  "post", targetHeaders: {Authorization: "Bearer <APP_TRIGGER_RUN_TOKEN>"},
+  targetBody: {project: "noy@back"}}
+- NOT deployed — `-d` commit is user's call.
+
 ## Plan (2026-11-19, 2) - thru: POST /thru with JSON body params (v1.2)
 
 - Gap: POST /thru accepted the verb but ignored the HTTP body — params had to be query

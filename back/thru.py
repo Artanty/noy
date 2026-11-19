@@ -12,7 +12,8 @@ upstream response back. Origin: noy/back's make-request; generalized here as a f
 feature so ANY backend can host it (python first).
 
 Route (GET or POST /thru), query params (POST may instead carry them as a JSON object
-body — same keys; query params override body fields):
+body with keys target/targetMethod/targetBody/targetHeaders/targetTimeoutS; query params
+override body fields):
     target    (required) absolute http(s) URL to hit
     method    get|post|put|patch|delete (default: get)
     body      url-encoded JSON body for non-get methods
@@ -83,8 +84,9 @@ def thru():
         return Response(json.dumps({"request": "error", "error": "thru disabled"}), status=503,
                         content_type="application/json")
 
-    # POST /thru may carry target/method/body/headers/timeout_s as a JSON object body;
-    # query params override body fields, so both forms compose and GET stays as-is
+    # POST /thru may carry target/targetMethod/targetBody/targetHeaders/targetTimeoutS
+    # as a JSON object body; query params override body fields, so both forms compose
+    # and GET stays as-is
     params = {}
     if request.method == "POST":
         params = request.get_json(silent=True)
@@ -95,18 +97,18 @@ def thru():
                             content_type="application/json")
 
     target = (request.args.get("target") or str(params.get("target") or "")).strip()
-    method = (request.args.get("method") or str(params.get("method") or "get")).strip().lower()
+    method = (request.args.get("method") or str(params.get("targetMethod") or "get")).strip().lower()
 
     body = request.args.get("body")
-    if body is None and "body" in params:
-        body = params["body"] if isinstance(params["body"], str) else json.dumps(params["body"])
+    if body is None and "targetBody" in params:
+        body = params["targetBody"] if isinstance(params["targetBody"], str) else json.dumps(params["targetBody"])
     body = body or ""
 
     extra_headers = {}
-    if "headers" in params and request.args.get("headers") is None:
-        extra_headers = params["headers"]
+    if "targetHeaders" in params and request.args.get("headers") is None:
+        extra_headers = params["targetHeaders"]
         if not isinstance(extra_headers, dict):
-            return Response(json.dumps({"request": "error", "error": "headers must be a JSON object"}), status=400,
+            return Response(json.dumps({"request": "error", "error": "targetHeaders must be a JSON object"}), status=400,
                             content_type="application/json")
     else:
         raw_headers = (request.args.get("headers") or "").strip()
@@ -119,7 +121,7 @@ def thru():
                 return Response(json.dumps({"request": "error", "error": "headers must be a JSON object"}), status=400,
                                 content_type="application/json")
     try:
-        timeout_s = int(request.args.get("timeout_s") or params.get("timeout_s") or DEFAULT_TIMEOUT_S)
+        timeout_s = int(request.args.get("timeout_s") or params.get("targetTimeoutS") or DEFAULT_TIMEOUT_S)
     except ValueError:
         timeout_s = DEFAULT_TIMEOUT_S
 
