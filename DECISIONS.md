@@ -1,5 +1,55 @@
 # DECISIONS.md
 
+## Plan (2026-11-19, 2) - thru: POST /thru with JSON body params (v1.2)
+
+- Gap: POST /thru accepted the verb but ignored the HTTP body — params had to be query
+  args, so Postman's JSON payload was silently discarded.
+- Plan: in the route, for POST with JSON object body read target/method/body/headers/
+  timeout_s from it; query params override body fields (backward compatible). `body`
+  field: JSON object → json.dumps, string → verbatim. Non-object JSON body → 400.
+  Update feat docs (v1.2) + test_thru_py.py contract tests, vendor to noy/back/thru.py,
+  run pytest. NOT deployed — `-d` commit is user's call.
+
+## Result (2026-11-19, 2) - thru v1.2 POST JSON body params
+
+- thru.py route: POST with JSON object body → target/method/body/headers/timeout_s read
+  from it, query params override. `body` object → json.dumps, string → verbatim.
+  Non-object JSON body → 400 "json body must be an object"; non-JSON POST body (e.g.
+  form/empty) → query params only, as before. Docstring + docs/thru.md (v1.2) updated.
+- test_thru_py.py: fixed fakes for the v1.1 `_fetch(url, method, body, extra_headers,
+  timeout_s)` signature (they had been left 4-arg — v1.1 tests were missing entirely),
+  added 6 tests (headers param x2, POST body x4-ish). 16/16 pass.
+- Vendored byte-identical to noy/back/thru.py, import-checked in noy venv.
+- Postman now: POST {{NOY_back_domain}}/thru with JSON body {target, method:"post",
+  headers:{Authorization: Bearer <APP_TRIGGER_RUN_TOKEN>}, body:{project:"noy@back"}}.
+- NOT deployed — noy.twc1.net runs thru v1 until a `-d` commit (user's call).
+
+## Plan (2026-11-19) - thru: forward Authorization (headers param) for flow /retrigger
+
+- Symptom: POST noy /thru?target=FLOW/retrigger&method=post → {"error":"Unauthorized"}.
+  Root cause: not noy auth — /thru mirrors upstream; flow's handleRetrigger requires
+  `Authorization: Bearer <APP_TRIGGER_RUN_TOKEN>` (flow/back/src/rerun.ts assertTriggerToken),
+  and thru v1 forwards no auth headers.
+- Plan: extend thru (feat source `feat/back/features/thru/v1/py/thru.py`, vendor to
+  noy/back/thru.py, docs thru.md) with `headers` query param: url-encoded JSON object of
+  extra upstream headers; invalid JSON / non-object → 400. Also note retrigger needs a JSON
+  body with project "repo@ns" via the `body` param. Local verify against a local echo that
+  Authorization reaches upstream. NOT deployed — `-d` commit is user's call.
+
+## Result (2026-11-19) - thru v1.1 headers param
+
+- feat `features/thru/v1/py/thru.py` + `docs/thru.md` (v1.1): `headers` query param (JSON
+  object merged into upstream request; connection/content-length/transfer-encoding/host/
+  accept-encoding dropped; non-JSON/non-object → 400). Vendored byte-identical to
+  `noy/back/thru.py` (was identical before the edit).
+- Verified locally (noy venv, flask test client, urlopen mocked): Authorization: Bearer
+  reaches upstream, Host/Content-Length not forwarded, default UA kept, `headers=notjson`
+  → 400. py3.6-safe (stdlib + f-strings only).
+- Postman usage for flow retrigger:
+  `GET {{NOY_back_domain}}/thru?target={{FLOW_back_domain}}/retrigger&method=post&headers=<urlencoded {"Authorization":"Bearer <APP_TRIGGER_RUN_TOKEN>"}>&body=<urlencoded {"project":"repo@ns"}>`
+  (retrigger validates project format `name@namespace` before rerunning the deploy run).
+- NOT deployed — noy.twc1.net still runs thru v1 until a `-d` commit (user's call).
+
 Session log for the `noy/back` Node.js service (Express, Vercel). Kept small per know rules
 (`../know/entries/rules.md`); old entries get flagged/archived when it grows.
 
